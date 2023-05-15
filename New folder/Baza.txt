@@ -1,0 +1,85 @@
+create database Plasticni_Hirurg;
+GO
+use Plasticni_Hirurg;
+GO
+create table Hirurg(
+id INT (20),
+prezime NVARCHAR(20),
+specijalizacija IDENTITY(1,1) PRIMARY KEY,
+ime NVARCHAR NVARCHAR(20),
+broj_tel INT)
+GO
+create table Pacijent(
+id INT IDENTITY(1,1) PRIMARY KEY,
+ime NVARCHAR(20) NOT NULL,
+prezime NVARCHAR(20) NOT NULL,
+broj_tel INT NOT NULL,
+email NVARCHAR(30) NOT NULL,
+)
+GO
+create table Karton(
+id INT IDENTITY(1,1) PRIMARY KEY,
+pacijent_id INT FOREIGN KEY REFERENCES Pacijent(id) NOT NULL,
+hirurg_id INT FOREIGN KEY REFERENCES Hirurg(id) NULL,
+zeljeni_izgled NVARCHAR(200),
+UNIQUE (pacijent_id)
+)
+
+GO
+create table Vrsta_operacije(
+id INT IDENTITY(1,1) PRIMARY KEY,
+opis NVARCHAR(120))
+
+GO
+
+create table Termin(
+id INT IDENTITY(1,1) PRIMARY KEY,
+datum DATE,
+vreme_pocetka TIME(0),
+vreme_zavrsetka TIME(0),
+pacijent_id INT FOREIGN KEY REFERENCES Pacijent(id),
+hirurg_id INT FOREIGN KEY REFERENCES Hirurg(id),
+Vrsta_operacije_id INT FOREIGN KEY REFERENCES Vrsta_operacije(id),
+cena INT)
+
+GO 
+CREATE TRIGGER napraviKarton ON Pacijent
+FOR INSERT
+AS
+
+INSERT INTO Karton
+        (pacijent_id, hirurg_id, zeljeni_izgled)
+    SELECT
+        id  , null , null
+        FROM inserted
+
+
+GO
+
+CREATE TRIGGER obrisiPacijenta ON Pacijent
+INSTEAD OF DELETE
+AS
+    DELETE FROM Karton
+    WHERE pacijent_id = (SELECT deleted.id FROM deleted)
+
+	DELETE FROM Termin
+    WHERE pacijent_id = (SELECT deleted.id FROM deleted)
+
+	 DELETE Pacijent
+     FROM DELETED K
+     INNER JOIN Pacijent P ON P.id = K.id
+
+GO
+
+CREATE TRIGGER obrisiHirurga ON Hirurg
+INSTEAD OF DELETE
+AS
+    DELETE FROM Karton
+    WHERE hirurg_id = (SELECT deleted.id FROM deleted)
+
+	DELETE FROM Termin
+    WHERE hirurg_id = (SELECT deleted.id FROM deleted)
+
+	 DELETE Hirurg
+     FROM DELETED K
+     INNER JOIN Hirurg P ON P.id = K.id
